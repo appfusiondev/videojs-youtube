@@ -188,9 +188,9 @@ videojs.Youtube = videojs.MediaTechController.extend({
         if (this.videoId == null) {
           // Set the black background if their is no video initially
           this.iframeblocker.style.backgroundColor = 'black';
-        } else {
-          this.player_.poster('https://img.youtube.com/vi/' + this.videoId + '/0.jpg');
         }
+      } else {
+        this.player_.poster('https://img.youtube.com/vi/' + this.videoId + '/0.jpg');
       }
     }
 
