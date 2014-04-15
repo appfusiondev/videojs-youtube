@@ -510,14 +510,23 @@ videojs.Youtube.prototype.onStateChange = function(state){
         this.player_.trigger('timeupdate');
         this.player_.trigger('playing');
         this.player_.trigger('play');
+
+        if(this.lastState == YT.PlayerState.BUFFERING) {
+          this.player_.trigger('seeked');
+        }
         break;
 
       case YT.PlayerState.PAUSED:
         this.player_.trigger('pause');
+
+        if(this.lastState == YT.PlayerState.BUFFERING) {
+          this.player_.trigger('seeked');
+        }
         break;
 
       case YT.PlayerState.BUFFERING:
         this.player_.trigger('timeupdate');
+        this.player_.trigger('seeking');
         
         // Make sure to not display the spinner for mobile
         if (!this.player_.options()['ytcontrols']) {
