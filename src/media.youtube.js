@@ -501,8 +501,13 @@ videojs.Youtube.prototype.onStateChange = function(state){
 
         this.updateQualities();
 
+        if(!this.isLoaded) {
+          this.player_.trigger('durationchange');
+          this.player_.trigger('loadeddata');
+          this.isLoaded = true;
+        }
+
         this.player_.trigger('timeupdate');
-        this.player_.trigger('durationchange');
         this.player_.trigger('playing');
         this.player_.trigger('play');
         break;
