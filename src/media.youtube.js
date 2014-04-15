@@ -16,7 +16,7 @@ videojs.Youtube = videojs.MediaTechController.extend({
     
     // No event is triggering this for YouTube
     this.features['progressEvents'] = false;
-    this.features['timeupdateEvents'] = false;
+    this.features['timeupdateEvents'] = true;
 
     // Copy the JavaScript options if they exists
     if (typeof options['source'] != 'undefined') {
@@ -313,7 +313,12 @@ videojs.Youtube.prototype.play = function(){
 
 videojs.Youtube.prototype.pause = function(){ this.ytplayer.pauseVideo(); };
 videojs.Youtube.prototype.paused = function(){ return (this.ytplayer)?(this.lastState !== YT.PlayerState.PLAYING && this.lastState !== YT.PlayerState.BUFFERING):true; };
-videojs.Youtube.prototype.currentTime = function(){ return (this.ytplayer && this.ytplayer.getCurrentTime)?this.ytplayer.getCurrentTime():0; };
+videojs.Youtube.prototype.currentTime = function() {
+  if(this.ytplayer && this.ytplayer.getCurrentTime) {
+    return this.ytplayer.getCurrentTime() + this.timeGap;
+  }
+  return 0;
+};
 videojs.Youtube.prototype.setCurrentTime = function(seconds){ this.ytplayer.seekTo(seconds, true); this.player_.trigger('timeupdate'); };
 videojs.Youtube.prototype.duration = function(){ return (this.ytplayer && this.ytplayer.getDuration)?this.ytplayer.getDuration():0; };
 
@@ -385,6 +390,7 @@ videojs.Youtube.prototype.loadYoutube = function(){
     events: {
       onReady: function(e) { e.target.vjsTech.onReady(); },
       onStateChange: function(e) { e.target.vjsTech.onStateChange(e.data); },
+      onVideoProgress: function(e) { e.target.vjsTech.onVideoProgress(e.data); },
       onPlaybackQualityChange: function(e){ e.target.vjsTech.onPlaybackQualityChange(e.data); },
       onError: function(e){ e.target.vjsTech.onError(e.data); }
     }
@@ -474,6 +480,11 @@ videojs.Youtube.prototype.updateQualities = function(){
   }
 };
 
+videojs.Youtube.prototype.onVideoProgress = function(currentTime) {
+  this.timeGap = 0;
+  this.player_.trigger('timeupdate');
+}
+
 videojs.Youtube.prototype.onStateChange = function(state){
   if (state != this.lastState){
     switch(state){
@@ -511,12 +522,23 @@ videojs.Youtube.prototype.onStateChange = function(state){
         this.player_.trigger('playing');
         this.player_.trigger('play');
 
+        if(isNaN(this.timeGap)) {
+          this.timeGap = 0;
+        }
+
+        var self = this;
+        if(this.timeGapIntervalEvent) { clearInterval(this.timeGapIntervalEvent); }
+        this.timeGapIntervalEvent = setInterval(function() {
+          self.timeGap += 0.042;
+        }, 42);
+
         if(this.lastState == YT.PlayerState.BUFFERING) {
           this.player_.trigger('seeked');
         }
         break;
 
       case YT.PlayerState.PAUSED:
+        clearInterval(this.timeGapIntervalEvent);
         this.player_.trigger('pause');
 
         if(this.lastState == YT.PlayerState.BUFFERING) {
